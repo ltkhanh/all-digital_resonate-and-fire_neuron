@@ -3,9 +3,9 @@
 // Author          : Trung-Khanh Le
 // Contact         : - ltkhanh@hcmus.edu.vn
 //                   - ltkhanh@bigdolphin.com.vn
-// Version         : 1.0
+// Version         : 1.2
 // Date            : 2022/11/28
-// Modified Date   : 2023/07/02
+// Modified Date   : 2023/11/30
 // License         : MIT
 /**************************************************************/
 
@@ -18,7 +18,7 @@
  * @attention
  */
 module frequencyMeasure
-#(	
+#(  
     parameter clockName = "Clock"
 )
 (
@@ -34,11 +34,11 @@ real    count_pulse_duty = 0;
 real    clk_freq         = 0; // clk freq (measured)
 /*
 Unit_number Time unit
--3 	        1ms
--6 	        1us
--9 	        1ns
--12 	    1ps
--15 	    1fs
+-3          1ms
+-6          1us
+-9          1ns
+-12         1ps
+-15         1fs
 */
 initial begin
     $timeformat(-6,2,"us",10);
