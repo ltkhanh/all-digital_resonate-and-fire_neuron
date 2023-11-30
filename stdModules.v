@@ -3,9 +3,9 @@
 // Author          : Trung-Khanh Le
 // Contact         : - ltkhanh@hcmus.edu.vn
 //                   - ltkhanh@bigdolphin.com.vn
-// Version         : 1.1
+// Version         : 1.2
 // Date            : 2022/11/28
-// Modified Date   : 2023/11/17
+// Modified Date   : 2023/11/30
 // License         : MIT
 /**************************************************************/
 
@@ -76,10 +76,10 @@ initial begin
     q <= 1'b0;
 end
 always@(posedge clk or posedge rs) begin
-	if(rs)
-		q <= 1'b0;
-	else
-		q <= d;
+    if(rs)
+        q <= 1'b0;
+    else
+        q <= d;
 end
 stdINV u0(qn,q);
 endmodule
@@ -378,6 +378,7 @@ endmodule
 
 /**
  * @brief N-bit Dgital Controlled Oscillator
+ * @param[in] Number of bit
  * @param[in] N-bit Control Value
  * @param[in] N-bit Duty Cycle
  * @param[in] Reset
@@ -387,34 +388,37 @@ endmodule
  */
 module stdDCON
 #(
-    parameter W = 8
+    parameter N = 8
 )
 (
-    output reg osc,
-    input [W-1:0] maxVal,
-    input [W-1:0] duty,    
+    output osc,
+    input [N-1:0] maxVal,
+    input [N-1:0] duty,    
     input reset,
     input clk    
 );
-reg [W-1:0] counterCycle;
-reg [W-1:0] counterDuty;
+reg [N-1:0] counterCycle;
+reg [N-1:0] counterDuty;
+reg toggle;
+/*--- Do not allow Duty > Cycle ---*/
+assign osc = (maxVal>duty)?toggle:clk;
+/*--- Frequency divider -----------*/
 always@(posedge clk or posedge reset) begin
-	if(reset) begin
-		counterCycle <= 0;
-		counterDuty <= 0;
-		osc <= 1'b1;
-	end else begin
-		if(counterCycle<maxVal) begin
-			counterCycle <= counterCycle + 1;
-			counterDuty <= counterDuty + 1;
-			if(counterDuty>duty) osc <= 1'b0;
-			else osc <= 1'b1;
-		end else begin
-			counterCycle <= 0;
-			counterDuty <= 0;
-			osc <= 1'b1;
-		end
-	end
+    if(reset) begin
+        counterCycle <= 0;
+        counterDuty <= 0;
+        toggle <= 1'b1;
+    end else begin
+        if(counterCycle<maxVal) begin
+            counterCycle <= counterCycle + 1;
+            counterDuty <= counterDuty + 1;
+            if(counterDuty<duty) toggle <= 1'b1;
+            else toggle <= 1'b0;
+        end else begin
+            counterCycle <= 0;
+            counterDuty <= 0;
+            toggle <= 1'b1;
+        end
+    end
 end
 endmodule
-
