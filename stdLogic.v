@@ -3,9 +3,9 @@
 // Author          : Trung-Khanh Le
 // Contact         : - ltkhanh@hcmus.edu.vn
 //                   - ltkhanh@bigdolphin.com.vn
-// Version         : 1.1
+// Version         : 1.2
 // Date            : 2022/11/28
-// Modified Date   : 2023/11/17
+// Modified Date   : 2023/11/30
 // License         : MIT
 /**************************************************************/
 
@@ -243,7 +243,7 @@ endmodule
  */
 module stdORN
 #(
-	parameter N = 3
+    parameter N = 3
 )
 (
     output y,
@@ -256,9 +256,9 @@ generate
     end else begin
         wire rs[N-2:0];
         assign rs[0] = x[1] | x[0];
-    	for(i=1;i<N-1;i=i+1) begin:loop
+        for(i=1;i<N-1;i=i+1) begin:loop
             assign rs[i] = x[i+1] | rs[i-1];
-	    end
+        end
         assign y = rs[N-2];
     end
 endgenerate
@@ -272,7 +272,7 @@ endmodule
  */
 module stdANDN
 #(
-	parameter N = 3
+    parameter N = 3
 )
 (
     output y,
@@ -285,9 +285,9 @@ generate
     end else begin
         wire rs[N-2:0];
         assign rs[0] = x[1] & x[0];
-    	for(i=1;i<N-1;i=i+1) begin:loop
+        for(i=1;i<N-1;i=i+1) begin:loop
             assign rs[i] = x[i+1] & rs[i-1];
-	    end
+        end
         assign y = rs[N-2];
     end
 endgenerate
