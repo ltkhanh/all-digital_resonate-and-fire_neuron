@@ -5,29 +5,9 @@
 //                   - ltkhanh@bigdolphin.com.vn
 // Version         : 1.2
 // Date            : 2022/11/28
-// Modified Date   : 2023/11/30
+// Modified Date   : 2023/12/14
 // License         : MIT
 /**************************************************************/
-
-/**
- * @brief General Multiplexer N to 1
- * @param[in] Number of signals
- * @param[in] List of signals
- * @param[in] Code of selection
- * @return selected signal
- * @attention
- */
-module stdMUXN
-#(
-    parameter N = 2
-)
-(
-    output y,
-    input [N-1:0] x,
-    input [$clog2(N)-1:0] code
-);
-assign y = x[code];
-endmodule
 
 /**
  * @brief D Flip Flop
@@ -38,7 +18,7 @@ endmodule
  * @return Inverted Q
  * @attention
  */
-module stdDFF2(
+module stdDFF1(
     output q,
     output qn,
     input d,
@@ -72,16 +52,17 @@ module stdDFF(
     input rs,
     input clk
 );
-initial begin
+/*initial begin
     q <= 1'b0;
-end
+end*/
 always@(posedge clk or posedge rs) begin
     if(rs)
         q <= 1'b0;
-    else
-        q <= d;
+    else begin
+        q <= d;        
+    end
 end
-stdINV u0(qn,q);
+assign qn = ~q;
 endmodule
 
 /**
@@ -104,11 +85,10 @@ module stdPFD(
     input refClk,
     input reset
 );
-supply0 GND;
-supply1 PWR;
+
 wire rs,rs1;
-stdDFF  u0(.q(slow),.qn(slown),.d(PWR),.rs(rs),.clk(signal));
-stdDFF  u1(.q(fast),.qn(fastn),.d(PWR),.rs(rs),.clk(refClk));
+stdDFF  u0(.q(slow),.qn(slown),.d(1'd1),.rs(rs),.clk(signal));
+stdDFF  u1(.q(fast),.qn(fastn),.d(1'd1),.rs(rs),.clk(refClk));
 stdAND2 u2(rs1,slow,fast);
 stdOR2  u3(rs,rs1,reset);
 endmodule
@@ -127,8 +107,7 @@ module delayCell(
     input reset,
     input clk
 );
-supply0 GND;
-supply1 PWR;
+
 wire       sign;
 wire       rs;
 stdINV     u000(sign,sig);
@@ -139,7 +118,32 @@ stdDFF     u100(.q(dsig),.qn(),.d(sig),.rs(rs),.clk(clk));
 endmodule
 
 /**
- * @brief Pulse Damper Shifter Duty into 1-clock cycle
+ * @brief Delay signal in 2-clock cycle
+ * @param[in] Signal
+ * @param[in] Reset
+ * @param[in] Clock
+ * @return delayed signal
+ * @attention
+ */
+module delayCell2(    
+    output dsig,    
+    input sig,
+    input reset,
+    input clk
+);
+
+wire       sign,signn;
+wire       rs;
+stdINV     u000(sign,sig);
+stdOR2     u010(rs,reset,sign);
+// Capture state value
+// --- Although can use sig as a clock for this flipflop, it is not stable on FPGA because of no delay
+stdDFF     u100(.q(signn),.qn(),.d(sig),.rs(rs),.clk(clk));
+stdDFF     u101(.q(dsig),.qn(),.d(signn),.rs(rs),.clk(clk));
+endmodule
+
+/**
+ * @brief Shfter-based Pulse Damper reduces Duty into 1-clock cycle
  * @param[in] High duty cycle pulse
  * @param[in] Reset
  * @param[in] Clock
@@ -152,9 +156,8 @@ module plsDamperShifter1C(
     input reset,
     input clk
 );
-supply0 GND;
-supply1 PWR;
-wire       sign,sigdl;
+
+wire       sign;
 wire       rs;
 wire[1:0]  dat;
 stdINV     u000(sign,sig);
@@ -169,7 +172,7 @@ stdXOR2    u200(dsig,dat[0],dat[1]);
 endmodule
 
 /**
- * @brief Pulse Damper Shifter Duty into 2-clock cycle
+ * @brief Shfter-based Pulse Damper reduces Duty into 2-clock cycle
  * @param[in] High duty cycle pulse
  * @param[in] Reset
  * @param[in] Clock
@@ -182,8 +185,7 @@ module plsDamperShifter2C(
     input reset,
     input clk
 );
-supply0 GND;
-supply1 PWR;
+
 wire       sign,sigdl;
 wire       rs;
 wire[2:0]  dat;
@@ -201,7 +203,7 @@ stdXOR2    u200(dsig,dat[0],dat[2]);
 endmodule
 
 /**
- * @brief Pulse Damper Shifter Duty into 3-clock cycle
+ * @brief Shfter-based Pulse Damper reduces Duty into 3-clock cycle
  * @param[in] High duty cycle pulse
  * @param[in] Reset
  * @param[in] Clock
@@ -214,8 +216,7 @@ module plsDamperShifter3C(
     input reset,
     input clk
 );
-supply0 GND;
-supply1 PWR;
+
 wire       sign,sigdl;
 wire       rs;
 wire[3:0]  dat;
@@ -235,7 +236,7 @@ stdXOR2    u200(dsig,dat[0],dat[3]);
 endmodule
 
 /**
- * @brief Pulse Damper Logic Duty
+ * @brief Logic gate-based Pulse Damper
  * @param[in] High duty cycle pulse
  * @return Damped pulse
  * @attention
@@ -244,8 +245,7 @@ module plsDamperLogic(
     output dsig,    
     input sig
 );
-supply0 GND;
-supply1 PWR;
+
 wire[10:0]    sign;
 stdINV       u1(sign[0],sig);
 //assign #0.01 sign[0] = ~sig;
@@ -278,8 +278,7 @@ module stdDCO8(
     input reset,
     input clk    
 );
-supply0 GND;
-supply1 PWR;
+
 wire       clkn;
 wire[7:0]  counter;
 wire[7:0]  counterf;
@@ -336,9 +335,9 @@ stdAND2    u126(counterf[6],counter[6],clkn);
 stdAND2    u127(counterf[7],counter[7],clkn);
 // OSC
 wire       tgRs,tgRs1;
-stdDFF     u200(.q(),.qn(osc),.d(PWR),.rs(tgRs),.clk(toggle));
+stdDFF     u200(.q(),.qn(osc),.d(1'd1),.rs(tgRs),.clk(toggle));
 stdOR2     u201(tgRs,tgRs1,rs);
-stdDFF     u202(.q(tgRs1),.qn(),.d(PWR),.rs(rs),.clk(matched));
+stdDFF     u202(.q(tgRs1),.qn(),.d(1'd1),.rs(rs),.clk(matched));
 // Compare
 // --- Check duty cycle
 stdXNOR2   u310(passed[0],counterf[0],duty[0]);
@@ -377,28 +376,28 @@ stdAND2    u426(matched,reached[13],reached[12]);
 endmodule
 
 /**
- * @brief N-bit Dgital Controlled Oscillator
+ * @brief W-bit Dgital Controlled Oscillator
  * @param[in] Number of bit
- * @param[in] N-bit Control Value
- * @param[in] N-bit Duty Cycle
+ * @param[in] W-bit Control Value
+ * @param[in] W-bit Duty Cycle
  * @param[in] Reset
  * @param[in] Clock
  * @return Oscillation
  * @attention
  */
-module stdDCON
+module stdDCOW
 #(
-    parameter N = 8
+    parameter W = 8
 )
 (
     output osc,
-    input [N-1:0] maxVal,
-    input [N-1:0] duty,    
+    input [W-1:0] maxVal,
+    input [W-1:0] duty,    
     input reset,
     input clk    
 );
-reg [N-1:0] counterCycle;
-reg [N-1:0] counterDuty;
+reg [W-1:0] counterCycle;
+reg [W-1:0] counterDuty;
 reg toggle;
 /*--- Do not allow Duty > Cycle ---*/
 assign osc = (maxVal>duty)?toggle:clk;
@@ -421,4 +420,30 @@ always@(posedge clk or posedge reset) begin
         end
     end
 end
+endmodule
+
+/**
+ * @brief Find a random number based on a seed value
+ * @brief The module uses XORshift Algorithm: https://doi.org/10.18637/jss.v008.i14
+ * @brief The code is modified from https://doi.org/10.48550/arXiv.2209.04423 (FPGA Random Number Generator)
+ * @param[in] Number of bit
+ * @param[in] W-bit seed value
+ * @return a random number
+ * @attention
+ */
+module rand_xorshift
+#(
+    parameter W = 16
+)
+(    
+    output [W-1:0] rnd,
+    input [W-1:0] seed   
+);
+//xorshift algorithm
+wire [W-1:0] temp = seed ^ seed >> 7;
+wire [W-1:0] temp2 = temp ^ temp << 9;
+wire [W-1:0] temp3 = temp2 ^ temp2 >>13;
+wire [W-1:0] rnd_out = temp3;
+//assign output
+assign rnd[W-1:0] = rnd_out[W-1:0];
 endmodule
