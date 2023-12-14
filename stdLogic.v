@@ -5,7 +5,7 @@
 //                   - ltkhanh@bigdolphin.com.vn
 // Version         : 1.2
 // Date            : 2022/11/28
-// Modified Date   : 2023/11/30
+// Modified Date   : 2023/12/14
 // License         : MIT
 /**************************************************************/
 
@@ -21,6 +21,36 @@ module stdINV(
 );
 //not #(0.01,0.01) u0(y,x);
 not u0(y,x);
+endmodule
+
+/**
+ * @brief Short delay Buffer
+ * @param[in] Signal
+ * @return Non-inverted signal
+ * @attention
+ */
+module stdBUF(
+    output y,
+    input x
+);
+wire yn;
+stdINV u0(yn,x);
+stdINV u1(y,yn);
+endmodule
+
+/**
+ * @brief Buffer with output enable
+ * @param[in] Signal
+ * @param[in] Enable
+ * @return Non-inverted signal or Tri-state
+ * @attention
+ */
+module stdBUFZ(
+    output y,
+    input x,
+    input e
+);
+assign y = e?x:1'bz;
 endmodule
 
 /**
@@ -120,36 +150,6 @@ xnor u0(y,a,b);
 endmodule
 
 /**
- * @brief Short delay Buffer
- * @param[in] Signal
- * @return Non-inverted signal
- * @attention
- */
-module stdBUF(
-    output y,
-    input x
-);
-wire yn;
-stdINV u0(yn,x);
-stdINV u1(y,yn);
-endmodule
-
-/**
- * @brief Buffer with output enable
- * @param[in] Signal
- * @param[in] Enable
- * @return Non-inverted signal or Tri-state
- * @attention
- */
-module stdBUFZ(
-    output y,
-    input x,
-    input e
-);
-assign y = e?x:1'bz;
-endmodule
-
-/**
  * @brief 3-input AND Gate
  * @param[in] Signal
  * @param[in] Signal
@@ -164,10 +164,7 @@ module stdAND3(
     input c
 );
 //assign #(0.01,0.01) y = a & b & c;
-//assign y = a & b & c;
-wire x;
-stdAND2 u0(x,a,b);
-stdAND2 u1(y,x,c);
+assign y = a & b & c;
 endmodule
 
 /**
@@ -185,11 +182,7 @@ module stdNAND3(
     input c
 );
 //assign #(0.01,0.01) y = ~(a & b & c);
-//assign y = ~(a & b & c);
-wire x,z;
-stdAND2 u0(x,a,b);
-stdAND2 u1(z,x,c);
-stdINV  u2(y,z);
+assign y = ~(a & b & c);
 endmodule
 
 /**
@@ -207,10 +200,7 @@ module stdOR3(
     input c
 );
 //assign #(0.01,0.01) y = a & b & c;
-//assign y = a & b & c;
-wire x;
-stdOR2 u0(x,a,b);
-stdOR2 u1(y,x,c);
+assign y = a & b & c;
 endmodule
 
 /**
@@ -228,40 +218,7 @@ module stdNOR3(
     input c
 );
 //assign #(0.01,0.01) y = ~(a & b & c);
-//assign y = ~(a & b & c);
-wire x,z;
-stdOR2 u0(x,a,b);
-stdOR2 u1(z,x,c);
-stdINV u2(y,z);
-endmodule
-
-/**
- * @brief N-input OR Gate
- * @param[in] Signal list
- * @return Output
- * @attention
- */
-module stdORN
-#(
-    parameter N = 3
-)
-(
-    output y,
-    input [N-1:0] x
-);
-genvar i;
-generate    
-    if(N<2) begin
-        assign y = x;
-    end else begin
-        wire rs[N-2:0];
-        assign rs[0] = x[1] | x[0];
-        for(i=1;i<N-1;i=i+1) begin:loop
-            assign rs[i] = x[i+1] | rs[i-1];
-        end
-        assign y = rs[N-2];
-    end
-endgenerate
+assign y = ~(a & b & c);
 endmodule
 
 /**
@@ -278,17 +235,108 @@ module stdANDN
     output y,
     input [N-1:0] x
 );
+wire rs[N-1:0];
 genvar i;
-generate    
-    if(N<2) begin
-        assign y = x;
-    end else begin
-        wire rs[N-2:0];
-        assign rs[0] = x[1] & x[0];
-        for(i=1;i<N-1;i=i+1) begin:loop
-            assign rs[i] = x[i+1] & rs[i-1];
-        end
-        assign y = rs[N-2];
-    end
+generate
+    assign rs[0] = x[0];    
+    for(i=1;i<N;i=i+1) begin:loop
+        assign rs[i] = rs[i-1] & x[i];
+    end    
 endgenerate
+assign y = rs[N-1];
+endmodule
+
+/**
+ * @brief N-input OR Gate
+ * @param[in] Signal list
+ * @return Output
+ * @attention
+ */
+module stdORN
+#(
+    parameter N = 3
+)
+(
+    output y,
+    input [N-1:0] x
+);
+wire rs[N-1:0];
+genvar i;
+generate
+    assign rs[0] = x[0];    
+    for(i=1;i<N;i=i+1) begin:loop
+        assign rs[i] = rs[i-1] | x[i];
+    end    
+endgenerate
+assign y = rs[N-1];
+endmodule
+
+/**
+ * @brief N-input NAND Gate
+ * @param[in] Signal list
+ * @return Output
+ * @attention
+ */
+module stdNANDN
+#(
+    parameter N = 3
+)
+(
+    output y,
+    input [N-1:0] x
+);
+wire rs[N-1:0];
+genvar i;
+generate
+    assign rs[0] = x[0];    
+    for(i=1;i<N;i=i+1) begin:loop
+        assign rs[i] = rs[i-1] & x[i];
+    end    
+endgenerate
+assign y = ~rs[N-1];
+endmodule
+
+/**
+ * @brief N-input NOR Gate
+ * @param[in] Signal list
+ * @return Output
+ * @attention
+ */
+module stdNORN
+#(
+    parameter N = 3
+)
+(
+    output y,
+    input [N-1:0] x
+);
+wire rs[N-1:0];
+genvar i;
+generate
+    assign rs[0] = x[0];    
+    for(i=1;i<N;i=i+1) begin:loop
+        assign rs[i] = rs[i-1] | x[i];
+    end    
+endgenerate
+assign y = ~rs[N-1];
+endmodule
+
+/**
+ * @brief General Multiplexer N to 1
+ * @param[in] Number of signals
+ * @param[in] List of signals
+ * @param[in] Code of selection
+ * @return selected signal
+ * @attention
+ */
+module stdMUXN
+#(
+    parameter N = 2
+)
+(
+    output y,
+    input [N-1:0] x,
+    input [$clog2(N)-1:0] code
+);
+assign y = x[code];
 endmodule
