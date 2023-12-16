@@ -5,7 +5,7 @@
 //                   - ltkhanh@bigdolphin.com.vn
 // Version         : 1.2
 // Date            : 2022/11/28
-// Modified Date   : 2023/12/14
+// Modified Date   : 2023/12/16
 // License         : MIT
 /**************************************************************/
 
@@ -235,7 +235,7 @@ module stdANDN
     output y,
     input [N-1:0] x
 );
-wire rs[N-1:0];
+wire rs[N-1:0] /*verilator split_var*/;
 genvar i;
 generate
     assign rs[0] = x[0];    
@@ -260,7 +260,7 @@ module stdORN
     output y,
     input [N-1:0] x
 );
-wire rs[N-1:0];
+wire rs[N-1:0] /*verilator split_var*/;
 genvar i;
 generate
     assign rs[0] = x[0];    
@@ -285,7 +285,7 @@ module stdNANDN
     output y,
     input [N-1:0] x
 );
-wire rs[N-1:0];
+wire rs[N-1:0] /*verilator split_var*/;
 genvar i;
 generate
     assign rs[0] = x[0];    
@@ -310,7 +310,7 @@ module stdNORN
     output y,
     input [N-1:0] x
 );
-wire rs[N-1:0];
+wire rs[N-1:0] /*verilator split_var*/;
 genvar i;
 generate
     assign rs[0] = x[0];    
