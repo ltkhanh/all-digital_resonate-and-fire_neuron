@@ -5,7 +5,7 @@
 //                   - ltkhanh@bigdolphin.com.vn
 // Version         : 1.2
 // Date            : 2022/11/28
-// Modified Date   : 2023/12/14
+// Modified Date   : 2023/12/28
 // License         : MIT
 /**************************************************************/
 
@@ -46,7 +46,7 @@ endmodule
  * @attention
  */
 module stdDFF(
-    output reg q,
+    output reg q /* verilator lint_off UNOPTFLAT */,
     output qn,
     input d,
     input rs,
@@ -62,7 +62,7 @@ always@(posedge clk or posedge rs) begin
         q <= d;        
     end
 end
-assign qn = ~q;
+stdINV  u0(qn,q);
 endmodule
 
 /**
@@ -400,7 +400,7 @@ reg [W-1:0] counterCycle;
 reg [W-1:0] counterDuty;
 reg toggle;
 /*--- Do not allow Duty > Cycle ---*/
-assign osc = (maxVal>duty)?toggle:clk;
+assign osc = (maxVal>duty)?toggle:0;
 /*--- Frequency divider -----------*/
 always@(posedge clk or posedge reset) begin
     if(reset) begin
